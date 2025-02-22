@@ -2,6 +2,7 @@
 Entrypoint for streamlit, see https://docs.streamlit.io/
 """
 
+import logging
 import asyncio
 import base64
 import os
@@ -404,19 +405,35 @@ def _render_message(
         if is_tool_result:
             message = cast(ToolResult, message)
             if message.output:
+                logging.warning("\n=== Message Output ===")
+                logging.warning("Type:", message.__class__.__name__)
                 if message.__class__.__name__ == "CLIResult":
+                    logging.warning("Content Type: code")
                     st.code(message.output)
                 else:
+                    logging.warning("Content Type: markdown")
                     st.markdown(message.output)
+                    logging.warning("==================\n")
             if message.error:
                 st.error(message.error)
             if message.base64_image and not st.session_state.hide_images:
+                logging.warning("Content Type: image")
                 st.image(base64.b64decode(message.base64_image))
+                logging.warning("==================\n")
         elif isinstance(message, dict):
+            logging.warning("\n=== Message Output ===")
+            logging.warning("Type: dict")
+            logging.warning("Content Type:", message["type"])
             if message["type"] == "text":
+                logging.warning("Content:", message["text"])
                 st.write(message["text"])
+                logging.warning("==================\n")
             elif message["type"] == "tool_use":
+                logging.warning("Tool Name:", message["name"])
+                logging.warning("Tool Input:", message["input"])
+                logging.warning("==================\n")
                 st.code(f'Tool Use: {message["name"]}\nInput: {message["input"]}')
+            
             else:
                 # only expected return types are text and tool_use
                 raise Exception(f'Unexpected response type {message["type"]}')
